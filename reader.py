@@ -1,4 +1,3 @@
-
 import csv
 import re
 from random import sample
@@ -92,6 +91,7 @@ class studentFile:
     def cleanAssessments (self,assignments):
         temp =[]
         for m in self.marks:
+            #Cleans out marks that aren't in assignment list
             for a in assignments:
                 if a.name.lower() == m[0].lower():
                     #Handle NMs
@@ -107,9 +107,7 @@ class studentFile:
     
 
    
-
-        
-
+#Reads the markbook file and stores it in student object data
 def readMarkbookFile (filePath):
     markbookFile = csv.reader(open(filePath))
     rows = []
@@ -145,50 +143,116 @@ def readMarkbookFile (filePath):
             else:
                 students[j].addGrade(assessmentName,None)
     return students
-    
-def readExpectationsFile (filePath):
-    expectationsFile = csv.reader(open(filePath))
-    rows = []
-    assignments = []
-    global useNMs 
-    #reads in the file and stores in a table
-    for row in expectationsFile:
-        rows.append(row)
 
+#Gets starters from list
+def getStarters(rows):
+    starters =[]
+    for i in range(1,len(rows[1])):
+        if rows[1][i].isspace() != True and rows[1][i] != '':
+            starters.append(rows[1][i].lstrip().rstrip())
+    if len(starters)==0:
+        return ["$ has demonstrated"]
+    return starters
+
+def getLinks(rows):
+    links =[]
+    for i in range(1,len(rows[8])):
+        if rows[8][i].isspace() != True and rows[8][i] != '':
+            links.append(rows[8][i].lstrip().rstrip())
+
+    if len(links)==0:
+        return ["knowledge of","understanding of"]
+    return links
+
+def getDemos(rows):
+    demos =[]
+    for i in range(1,len(rows[9])):
+        if rows[9][i].isspace() != True and rows[9][i] != '':
+            demos.append(rows[9][i].lstrip().rstrip())
+    if len(demos)==0:
+        return ["knowledge of","understanding of"]
+    return demos
+
+def getReview(rows):
+    demos =[]
+    for i in range(1,len(rows[10])):
+        if rows[10][i].isspace() != True and rows[10][i] != '':
+            demos.append(rows[10][i].lstrip().rstrip())
+    if len(demos)==0:
+        return ["$ should review"]
+    return demos
+
+#Gets modifiers from list
+def getModifiers(rows):
+    modifiers = []
+    #reads in the file and stores in a table
+    for i in range(3,7):
+        modifiers.append(rows[i])
+        if not 'level' in modifiers[i-3][0].lower():
+            raise Exception("Level modifiers moved,\n please make sure they're in rows 4 - 8")
+        modifiers[i-3]= list(filter(None,modifiers[i-3]))
+        for j in range(len(modifiers[i-3])):
+            modifiers[i-3][j]=modifiers[i-3][j].lstrip().rstrip()
+    return modifiers
+
+#gets expectations from 2d list    
+def getExpectations(rows):
+    global useNMs
+    assignments = []
     #Set if we use NMs
     if rows[0][1].lower()=='yes':
         useNMs = True
     #move assingment data from
     k = 0
-    for i in range(2,len(rows)):
+    for i in range(12,len(rows)):
         assignments.append(Assessment(rows[i][0]))
         if assignments[k].name.isspace():
             assignments.pop()
             continue
         for j in range(1,len(rows[i])):
-            assignments[k].addExpectation(rows[i][j])
-        #Doesn't add assessment to the list if the forget expectations
+            assignments[k].addExpectation(rows[i][j].lstrip().rstrip())
+        #Doesn't add assessment to the list if they forget expectations
         if  assignments[k].expectations == []:
             assignments.pop()
             continue
         k+=1
     return assignments
 
+#Reads the file and stores in 2d list    
+def readExpectationsFile (filePath):
+    expectationsFile = csv.reader(open(filePath))
+    rows = []
+    global useNMs 
+    #reads in the file and stores in a table
+    for row in expectationsFile:
+        rows.append(row)
+    return rows
+    
 
+def getAssessments (filePath):
+    markbookFile = csv.reader(open(filePath))
+    rows = []
+    rowNum = 0
+    markRow = -1
 
+    #reads in the file and stores in a table
+    #Finds where the marks are with a linear search
+    for row in markbookFile:
+        rows.append(row)
+        if '[Marks]' in row:
+            markRow = rowNum
+        rowNum +=1
+    
 
-"""
-Notes:
-[x]1. NMs are treated as None, this is to eliminate it when considering max or minimum.
-    Make this toggleable ->useNMs in csv
-[ ]2. Not tested to use multiple mark sets
-[x]3. Marks are 2D lists (x,y), x is this name, y is the actual percentage mark for easy comparisons
-4. 
+    #Set values to navigate the table
+    enrollment = int (rows[8][0])
+    amountOfAssessments = int (rows[markRow+1][1])
+    assessmentList=[]
+    
+    #Builds student profiles with names and student number
+    for i in range(amountOfAssessments):
+        assessmentName = rows[markRow+2+(i*(enrollment+1))][1]
+        assessmentList.append(assessmentName)
+        
+    return assessmentList
 
-Edge cases:
-[x]1. two max or minimums (currently selects first)
-[ ]2. don't select the last used expectation pulled from the same assignment
-[ ]3. Select mark or highest grade to set modifier 
-[ ]4. Add customizable modifiers
-[ ]5. Add customizable starters
-"""
