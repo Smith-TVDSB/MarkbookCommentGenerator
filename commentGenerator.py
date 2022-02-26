@@ -1,10 +1,10 @@
+from fileinput import filename
 from comments import *
 from reader import *
-import tkinter
+import tkinter, os, subprocess, platform
 from tkinter import END
 from tkinter import messagebox
 import tkinter.filedialog as fd
-import os, subprocess, platform
 
 def setMBText(text):
     MBField.delete(0,END)
@@ -34,6 +34,42 @@ def getExpFile():
         setExpText(tempdir)
         return tempdir
 
+def makeExpFile():
+    if MBField.get()[-4:] !='.csv' and MBField.get()[-4:] !='.xls' and MBField.get()[-4:] !='.xlsx':
+        messagebox.showerror("Error","Use a csv file from markbook to generate a template")
+        return None
+    assignmentList = getAssessments(MBField.get())
+    courseName = MBField.get()[:-4] #removes file extension
+    fileName = courseName+'-Expectations.csv'
+    print(assignmentList)
+    with open(fileName,'w',encoding='UTF8',newline='') as f:
+        writer =csv.writer(f)
+        #Standard Starter
+        writer.writerow(['[Use NMs for weakness]','yes'])
+        writer.writerow(['[Starters]','$ has demonstrated'])
+        writer.writerow(['[Modifiers]'])
+        writer.writerow(['Level 4','thorough'])
+        writer.writerow(['Level 3','considerable'])
+        writer.writerow(['Level 2','some'])
+        writer.writerow(['Level 1','limited'])
+        writer.writerow(['Level 0','very limited'])
+        writer.writerow(['[Link]','knowledge of','understanding of'])
+        writer.writerow(['[Demonstrators]','as demonstrated by'])
+        writer.writerow(['[Review]','$ should review'])
+        writer.writerow(['[Assignments]','Expectations ->'])
+        for i in assignmentList:
+            writer.writerow([i])
+    
+    if messagebox.askyesno('Open Expectation','Would you like to open the expectation file now?'):
+        currdir = os.getcwd()
+        if platform.system()=='Darwin':
+            subprocess.call('open', currdir + fileName)
+        elif platform.system() == 'Windows':
+            os.startfile(fileName)
+        else:
+                subprocess.call('xdg-open',currdir + fileName)
+
+       
 
 
 def run():
@@ -48,10 +84,19 @@ def run():
         return None
     if '.' in fileName:
         messagebox.showerror("Error","you can't have a \'.\' in your file name")
-        return None
+    
+    
     
     root.withdraw()
-    assignments =readExpectationsFile(ExpField.get())
+    #Reads the file
+    rows = readExpectationsFile(ExpField.get())
+    #Pulls neccessary data to build the comments.
+    assignments =getExpectations(rows)
+    starters = getStarters(rows)
+    modifiers = getModifiers(rows)
+    links = getLinks(rows)
+    demonstrators = getDemos(rows)
+    reviewStatements = getReview(rows)
     stdnts = readMarkbookFile(MBField.get())
 
     #read in student name, then grades to generate a comment
@@ -63,8 +108,7 @@ def run():
         writer.writerow(['First Name','Last Name','Best Mark','Comment'])
         for s in stdnts:
             s.cleanAssessments(assignments)
-            s.comment = makeComment(s.maxAssign,s.strExp,s.wknExp)
-
+            s.comment = makeComment(starters,modifiers,links,demonstrators,reviewStatements,s.maxAssign,s.strExp,s.wknExp)
 
             #Add it to the list once the student is constructed, to easily loop and print to CSV for printing
             writer.writerow([s.firstName,s.lastName,s.maxAssign[0],s.comment])
@@ -82,6 +126,8 @@ def run():
                 os.startfile(fileName+'.csv')
             else:
                 subprocess.call('xdg-open',currdir + fileName + '.csv')
+            root.destroy()
+            exit()
         else:
             root.destroy()
             exit()
@@ -98,6 +144,7 @@ root = tkinter.Tk()
 root.title('Keith Smith\'s comment starter')
 root.geometry('400x200')
 
+#Markbook file reader
 insLbl1 = tkinter.Label(root,text = '1. Select the markbook file ', font =('Arial',14))
 insLbl1.grid(row = 0, column = 0,columnspan=6)
 MBField = tkinter.Entry(root,width=40)
@@ -105,6 +152,7 @@ MBField.grid(row=1,column=0,columnspan=6)
 mbBtn = tkinter.Button(root,text = 'Markbook File',command = getMarksFile)
 mbBtn.grid(row=1,column=6)
 
+#Comment csv
 insLbl2 = tkinter.Label(root,text = '2. Select the expectations file', font =('Arial',14))
 insLbl2.grid(columnspan=6)
 ExpField = tkinter.Entry(root, width = 40)
@@ -112,6 +160,7 @@ ExpField.grid(row=3,columnspan=6)
 expBtn = tkinter.Button(root,text = 'Expectations File',command = getExpFile)
 expBtn.grid(row = 3, column=6)
 
+#Output field
 insLbl2 = tkinter.Label(root,text = '3.Name the output file and run:', font =('Arial',14))
 insLbl2.grid(columnspan=6)
 outField = tkinter.Entry(root,width=40)
@@ -119,8 +168,7 @@ outField.insert(0,'output')
 outField.grid(column=0)
 startBtn = tkinter.Button(root,text = 'Make Comment File',command=run)
 startBtn.grid(row = 5,column=6)
+
+tmpltBtn = tkinter.Button(root,text="Generate Expectation Template", command = makeExpFile)
+tmpltBtn.grid(row=6,columnspan=6,column=0)
 root.mainloop()
-
-
-
-
