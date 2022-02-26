@@ -5,20 +5,22 @@ from random import sample
 
 #Constructs the comment based on the mark of the highest mark.
 
-def makeComment(assignment,str,wkn):
+def makeComment(starters,modifiers,links,demonstrators,reviewStatments,assignment,str,wkn):
+    start = sample(starters,1)[0]
+    link = sample(links,1)[0]
+    demo = sample(demonstrators,1)[0]
+    review = sample(reviewStatments,1)[0]
     if assignment[1] >= 80:
-        mod = sample(["thorough", "exceptional"],1)[0]
+        mod = sample(modifiers[0][1:],1)[0]
     elif assignment[1] >= 70:
-        mod = "considerable"
+        mod = sample(modifiers[1][1:],1)[0]
     elif assignment[1] >= 60:
-        mod = "some"
+        mod = sample(modifiers[2][1:],1)[0]
     elif assignment[1] >= 50:
-        mod = "limited"
+        mod = sample(modifiers[3][1:],1)[0]
     else:
-        mod = "very limited"
+        mod = sample(modifiers[4][1:],1)[0]
 
-    filler = sample(['knowledge of','understanding of','ability in using'],1)[0]
-
-    text = f"$ has demonstrated {mod} {filler} {str} as demonstrated by # {assignment[0]}. $ should review {wkn}."
+    text = f"{start} {mod} {link} {str} {demo} {assignment[0]}. {review} {wkn}."
     return text
 
