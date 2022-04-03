@@ -10,9 +10,17 @@ class Assessment:
     def __init__ (self, name):
         self.name = name
         self.expectations = [] #Makes more sense as a list
+        self.lastStr = ''
+        self.lastWkn = ''
     def addExpectation (self, exp):
         if exp != '':
             self.expectations.append(exp)
+    def updateStrength(self, strength):
+        if len(self.expectations) > 1:
+            self.lastStr = strength
+    def updateWeakness(self, weakness):
+        if len(self.expectations) > 1:
+            self.lastWkn = weakness
 
 class studentFile:
     #set their max and min to narrow where marks are
@@ -256,3 +264,19 @@ def getAssessments (filePath):
         
     return assessmentList
 
+
+"""
+Notes:
+[x]1. NMs are treated as None, this is to eliminate it when considering max or minimum.
+    Make this toggleable ->useNMs in csv
+[x]2. Not tested to use multiple mark sets
+[x]3. Marks are 2D lists (x,y), x is this name, y is the actual percentage mark for easy comparisons
+4. 
+
+Edge cases:
+[x]1. two max or minimums (currently selects first)
+[x]2. don't select the last used expectation pulled from the same assignment
+[x]3. Select mark or highest grade to set modifier 
+[x]4. Add customizable modifiers
+[x]5. Add customizable starters
+"""
