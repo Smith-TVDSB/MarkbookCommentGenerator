@@ -4,6 +4,7 @@ from reader import *
 import tkinter, os, subprocess, platform
 from tkinter import END
 from tkinter import messagebox
+import sys
 import tkinter.filedialog as fd
 
 def setMBText(text):
@@ -40,8 +41,17 @@ def makeExpFile():
         return None
     assignmentList = getAssessments(MBField.get())
     courseName = MBField.get()[:-4] #removes file extension
-    fileName = courseName+'-Expectations.csv'
-    print(assignmentList)
+    fileName = courseName+'-Expectations'
+    currdir = os.getcwd()
+    i = 0
+    if os.path.exists(fileName+'.csv'):
+        i+=1
+    while os.path.exists(fileName+"(%s).csv" % i):
+        i += 1
+    if i == 0:
+        fileName +='.csv'
+    else:
+        fileName +='('+str(i) + ').csv'
     with open(fileName,'w',encoding='UTF8',newline='') as f:
         writer =csv.writer(f)
         #Standard Starter
@@ -54,14 +64,14 @@ def makeExpFile():
         writer.writerow(['Level 1','limited'])
         writer.writerow(['Level 0','very limited'])
         writer.writerow(['[Link]','knowledge of','understanding of'])
-        writer.writerow(['[Demonstrators]','as demonstrated by'])
+        writer.writerow(['[Demonstrators]','as demonstrated by #'])
         writer.writerow(['[Review]','$ should review'])
         writer.writerow(['[Assignments]','Expectations ->'])
         for i in assignmentList:
             writer.writerow([i])
     
+    setExpText(currdir+fileName)
     if messagebox.askyesno('Open Expectation','Would you like to open the expectation file now?'):
-        currdir = os.getcwd()
         if platform.system()=='Darwin':
             subprocess.call('open', currdir + fileName)
         elif platform.system() == 'Windows':
@@ -127,14 +137,14 @@ def run():
             else:
                 subprocess.call('xdg-open',currdir + fileName + '.csv')
             root.destroy()
-            exit()
+            sys.exit(0)
         else:
             root.destroy()
-            exit()
+            sys.exit(0)
 
 def report_callback_exception(self, exc, val, tb):
     messagebox.showerror("Error", message=str(val))
-    exit()
+    sys.exit(0)
 
 #Any errors get passed back and output here as a messagebox
 tkinter.Tk.report_callback_exception = report_callback_exception
@@ -142,7 +152,7 @@ tkinter.Tk.report_callback_exception = report_callback_exception
 #GUI
 root = tkinter.Tk()
 root.title('Keith Smith\'s comment starter')
-root.geometry('400x200')
+root.geometry('475x200')
 
 #Markbook file reader
 insLbl1 = tkinter.Label(root,text = '1. Select the markbook file ', font =('Arial',14))
@@ -154,7 +164,7 @@ mbBtn.grid(row=1,column=6)
 
 #Comment csv
 insLbl2 = tkinter.Label(root,text = '2. Select the expectations file', font =('Arial',14))
-insLbl2.grid(columnspan=6)
+insLbl2.grid(row = 2, column = 0, columnspan=6)
 ExpField = tkinter.Entry(root, width = 40)
 ExpField.grid(row=3,columnspan=6)
 expBtn = tkinter.Button(root,text = 'Expectations File',command = getExpFile)
@@ -169,6 +179,8 @@ outField.grid(column=0)
 startBtn = tkinter.Button(root,text = 'Make Comment File',command=run)
 startBtn.grid(row = 5,column=6)
 
-tmpltBtn = tkinter.Button(root,text="Generate Expectation Template", command = makeExpFile)
-tmpltBtn.grid(row=6,columnspan=6,column=0)
+#Generate button
+tmpltBtn = tkinter.Button(root,text="Generate Exp.\n Template", command = makeExpFile)
+tmpltBtn.grid(row=1,columnspan=6,column=7)
+
 root.mainloop()
